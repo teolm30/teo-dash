@@ -104,6 +104,25 @@ export default function Dashboard() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    // 9 hours = 32400 seconds, incrementing progress over that duration
+    const totalDuration = 32400 * 1000; // ms
+    const interval = 1000; // update every second
+    const increment = (100 * interval) / totalDuration;
+    const timer = setInterval(() => {
+      setDownloadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          return 100;
+        }
+        return prev + increment;
+      });
+    }, interval);
+    return () => clearInterval(timer);
+  }, [authenticated]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -231,6 +250,23 @@ export default function Dashboard() {
       <footer>
         <p>Last updated: {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
       </footer>
+      <div className="download-bar">
+        <div className="download-content">
+          <div className="download-left">
+            <span className="download-icon">🎮</span>
+            <span className="download-title">Valorant</span>
+          </div>
+          <div className="download-center">
+            <div className="progress-container">
+              <div className="progress-bar" style={{ width: `${downloadProgress}%` }} />
+            </div>
+            <div className="progress-info">
+              <span className="progress-percent">{downloadProgress.toFixed(2)}%</span>
+              <span className="progress-time">Estimated time: 9 hours</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -314,9 +350,86 @@ export default function Dashboard() {
         .status-badge.complete { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
         footer {
           text-align: center;
-          padding: 40px 0;
+          padding: 40px 0 120px 0;
           color: #666;
           font-size: 14px;
+        }
+        .download-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(180deg, rgba(20, 20, 35, 0.95) 0%, rgba(15, 15, 25, 0.98) 100%);
+          border-top: 1px solid rgba(230, 70, 70, 0.3);
+          padding: 16px 24px;
+          backdrop-filter: blur(12px);
+          z-index: 200;
+        }
+        .download-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          gap: 24px;
+        }
+        .download-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 160px;
+        }
+        .download-icon { font-size: 28px; }
+        .download-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: 1px;
+        }
+        .download-center {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .progress-container {
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        .progress-bar {
+          height: 100%;
+          background: linear-gradient(90deg, #e63946 0%, #f72585 50%, #e63946 100%);
+          border-radius: 4px;
+          transition: width 1s linear;
+          position: relative;
+        }
+        .progress-bar::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 60px;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+          animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-60px); }
+          100% { transform: translateX(0); }
+        }
+        .progress-info {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+        }
+        .progress-percent {
+          color: #e63946;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
+        }
+        .progress-time {
+          color: #888;
         }
         @media (max-width: 768px) {
           .projects-grid { grid-template-columns: 1fr; }
